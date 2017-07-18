@@ -17,7 +17,7 @@
    <widget class="QWidget" name="layoutWidget">
     <property name="geometry">
      <rect>
-      <x>360</x>
+      <x>20</x>
       <y>260</y>
       <width>195</width>
       <height>71</height>
@@ -96,6 +96,25 @@
      </rect>
     </property>
    </widget>
+   <widget class="QPushButton" name="pbList">
+    <property name="geometry">
+     <rect>
+      <x>470</x>
+      <y>300</y>
+      <width>93</width>
+      <height>28</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Play List</string>
+    </property>
+   </widget>
+   <zorder>layoutWidget</zorder>
+   <zorder>pbOpen</zorder>
+   <zorder>lePath</zorder>
+   <zorder>wgVideo</zorder>
+   <zorder>pbPlay</zorder>
+   <zorder>pbList</zorder>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
  </widget>

@@ -1,13 +1,25 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include <iostream>
+#include <functional>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+
+    plist = new PlayList(parent);
+    plist->set_window_pos(this->pos().x() + this->size().width(),
+                          this->pos().y());
+
+    //plist->pos().setX(ui->centralWidget->pos().x() + this->size().width());
+    //plist->pos().setY(ui->centralWidget->pos().y());
     WId winid = ui->wgVideo->winId();
     player = new TPlayer(winid);
+    player->set_callback(std::bind(&PlayList::to_prev_play_obj, plist),
+                         std::bind(&PlayList::to_next_play_obj, plist),
+                         std::bind(&PlayList::get_play_obj, plist, std::placeholders::_1));
 }
 
 MainWindow::~MainWindow()
@@ -53,16 +65,17 @@ void MainWindow::on_pbPlay_clicked()
 
 void MainWindow::on_pbStop_clicked()
 {
+    player->play_stop(&player->play_obj);
 }
 
 void MainWindow::on_pbPrev_clicked()
 {
-
+    player->play_prev(&player->play_obj);
 }
 
 void MainWindow::on_pbNext_clicked()
 {
-
+    player->play_next(&player->play_obj);
 }
 
 void MainWindow::on_pbOpen_clicked()
@@ -74,16 +87,16 @@ void MainWindow::on_pbOpen_clicked()
     if(filedialog.exec())
     {
         ui->lePath->setText(filedialog.selectedFiles().at(0));
-        player->video_cnt = 1;
+        //player->video_cnt = 1;
 
         QString strFile = filedialog.selectedFiles().at(0);
         QByteArray byteArray = strFile.toLocal8Bit();
         char * src = byteArray.data();
         int strLen = strFile.length();
-        player->video_list[0] = (char *)malloc(strLen+1);
-        strcpy( player->video_list[0] , src);
-        player->video_list[0][strLen] = 0;
-        qDebug() << player->video_list[0];
+        //player->video_list[0] = (char *)malloc(strLen+1);
+        //strcpy( player->video_list[0] , src);
+        //player->video_list[0][strLen] = 0;
+        //qDebug() << player->video_list[0];
     }
 /*
     QDirIterator iterDir(strDir, strFilters, QDir::Files | QDir::NoSymLinks,
@@ -93,4 +106,30 @@ void MainWindow::on_pbOpen_clicked()
 
 void MainWindow::on_MainWindow_iconSizeChanged(const QSize &iconSize)
 {
+}
+
+void MainWindow::on_pbList_clicked()
+{
+    if(plist->isVisible())
+        plist->hide();
+    else
+    {
+        plist->set_window_pos(this->pos().x() + this->size().width(),
+                              this->pos().y());
+        plist->show();
+    }
+}
+
+void MainWindow::moveEvent(QMoveEvent *event)
+{
+    if(plist->isVisible())
+    {
+        plist->set_window_pos(this->pos().x() + this->size().width(),
+                              this->pos().y());
+    }
+}
+
+void MainWindow::on_MainWindow_destroyed()
+{
+    delete plist;
 }

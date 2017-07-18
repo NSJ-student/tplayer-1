@@ -13,14 +13,14 @@ TPlayer::TPlayer(WId winid)
     if(play_obj.play_select == SELECT_VIDEO)
     {
         debug_msg("video selected...\n");
-        play_obj.play_cnt = &video_cnt;
-        play_obj.play_list = video_list;
+       // play_obj.play_cnt = &video_cnt;
+       // play_obj.play_list = video_list;
     }
     else
     {
         debug_msg("image selected...\n");
-        play_obj.play_cnt = &img_cnt;
-        play_obj.play_list = image_list;
+        //play_obj.play_cnt = &img_cnt;
+        //play_obj.play_list = image_list;
     }
 
     play_obj.state = STATE_PREPARING;
@@ -115,11 +115,12 @@ TPlayer::~TPlayer()
     gst_object_unref (play_obj.bus);
     gst_element_set_state (play_obj.pipeline, GST_STATE_NULL);
     gst_object_unref (play_obj.pipeline);
-
+/*
     for(; img_cnt > 0; img_cnt--)
         free(image_list[img_cnt-1]);
     for(; video_cnt > 0; video_cnt--)
         free(video_list[video_cnt-1]);
+        */
 }
 
 GstBusSyncReply TPlayer::my_bus_callback(GstBus *bus, GstMessage *message, void * arg)
@@ -583,6 +584,13 @@ failed:
 gboolean TPlayer::play_start(gpointer user_data)
 {
     PipeElement * obj = (PipeElement *)user_data;
+    char * play_path;
+
+    fp_get_play_path(&play_path);
+    if(play_path == NULL)
+    {
+        return FALSE;
+    }
 
     if(obj->state != STATE_PLAYING)
     {
@@ -590,16 +598,17 @@ gboolean TPlayer::play_start(gpointer user_data)
         gst_element_set_state (obj->pipeline, GST_STATE_READY);
 
         g_object_set(G_OBJECT(obj->source),
-                "location", obj->play_list[obj->play_idx], NULL);
+                "location", play_path, NULL);
 
         g_object_set(G_OBJECT(obj->textoverlay),
-                "text", obj->play_list[obj->play_idx], NULL);
+                "text", play_path, NULL);
 
-        debug_msg("\n+++++ Start Play %s\n", obj->play_list[obj->play_idx]);
+        debug_msg("\n+++++ Start Play %s\n", play_path);
         gst_element_set_state (obj->source, GST_STATE_PLAYING);
         gst_element_set_state (obj->typefind, GST_STATE_PLAYING);
     }
 
+    free(play_path);
     return FALSE;
 }
 
@@ -611,7 +620,6 @@ gboolean TPlayer::play_stop(gpointer user_data)
     {
         obj->state = STATE_STOP;
         obj->end_flag = TRUE;
-        g_main_loop_quit(obj->loop);
     }
 
     return FALSE;
@@ -636,7 +644,6 @@ gboolean TPlayer::play_restart(gpointer user_data)
     if((obj->state == STATE_PLAYING)||(obj->state == STATE_PAUSE))
     {
         obj->state = STATE_STOP;
-        g_main_loop_quit(obj->loop);
     }
 
     return FALSE;
@@ -648,14 +655,16 @@ gboolean TPlayer::play_next(gpointer user_data)
 
     if(obj->state == STATE_PLAYING)
     {
+        /*
         if(*obj->play_cnt-1 > obj->play_idx)	obj->play_idx++;
         else					obj->play_idx = 0;
+        */
+        fp_play_next();
 #if (USE_POP_MODE == 0)
         gst_element_set_state (obj->pipeline, GST_STATE_READY);
         play_start(obj);
 #else
         obj->state = STATE_STOP;
-        g_main_loop_quit(obj->loop);
 #endif
     }
 
@@ -669,14 +678,16 @@ gboolean TPlayer::play_prev(gpointer user_data)
     if(obj->state == STATE_PLAYING)
     {
         obj->state = STATE_STOP;
+        /*
         if(0 < obj->play_idx)	obj->play_idx--;
         else					obj->play_idx = *obj->play_cnt - 1;
+        */
+        fp_play_prev();
 #if (USE_POP_MODE == 0)
         gst_element_set_state (obj->pipeline, GST_STATE_READY);
         play_start(obj);
 #else
         obj->state = STATE_STOP;
-        g_main_loop_quit(obj->loop);
 #endif
     }
 
@@ -692,8 +703,6 @@ gboolean TPlayer::play_image(gpointer user_data)
         obj->state = STATE_STOP;
         obj->play_idx = 0;
         obj->play_select = SELECT_IMAGE;
-
-        g_main_loop_quit(obj->loop);
     }
 
     return FALSE;
@@ -708,11 +717,16 @@ gboolean TPlayer::play_video(gpointer user_data)
         obj->state = STATE_STOP;
         obj->play_idx = 0;
         obj->play_select = SELECT_VIDEO;
-
-        g_main_loop_quit(obj->loop);
     }
 
     return FALSE;
+}
+
+void TPlayer::set_callback(f_play_others prev, f_play_others next, f_get_play_object get_path)
+{
+    fp_play_next = std::forward<f_play_others>(next);
+    fp_play_prev = std::forward<f_play_others>(prev);
+    fp_get_play_path = std::forward<f_get_play_object>(get_path);
 }
 
 int TPlayer::link_image_decode(gpointer user_data, char * type)

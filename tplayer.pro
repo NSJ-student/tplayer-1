@@ -37,11 +37,14 @@ LIBS += -LC:\\gstreamer\\1.0\\x86_64\\lib \
 SOURCES += \
         main.cpp \
         mainwindow.cpp \
-    tplayer.cpp
+    tplayer.cpp \
+    playlist.cpp
 
 HEADERS += \
         mainwindow.h \
-    tplayer.h
+    tplayer.h \
+    playlist.h
 
 FORMS += \
-        mainwindow.ui
+        mainwindow.ui \
+    playlist.ui

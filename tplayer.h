@@ -3,6 +3,8 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <iostream>
+#include <functional>
 #include <QDebug>
 #include <QByteArray>
 #include <QApplication>
@@ -40,7 +42,6 @@ typedef struct _PipeElement {
     int state;
     char * edid;
 
-    GMainLoop * loop;
     GstBus * bus;
 
     GstElement * pipeline;
@@ -67,10 +68,6 @@ typedef struct _PipeElement {
     gint play_idx;		// play index
     char ** play_list;
     char * play_cnt;
-    char * menu_img;		// menu image file path
-
-    // Original event handler of Pad
-    GstPadEventFunction f_event_handler;
 } PipeElement;
 
 typedef enum {
@@ -85,12 +82,14 @@ typedef enum {
 class TPlayer
 {
 public:
-    PipeElement play_obj;
-    char img_cnt=0;
-    char video_cnt=0;
-    char * image_list[MAX_IMAGE_FILE];
-    char * video_list[MAX_VIDEO_FILE];
+    typedef std::function<bool(void)> f_play_others;
+    typedef std::function<void(char **)> f_get_play_object;
     typedef gboolean (TPlayer::*play_handler_t)(gpointer user_data);
+
+    PipeElement play_obj;
+    f_play_others fp_play_next;
+    f_play_others fp_play_prev;
+    f_get_play_object fp_get_play_path;
 
     TPlayer(WId winid);
     ~TPlayer();
@@ -107,6 +106,7 @@ public:
     gboolean play_prev		(gpointer user_data);
     gboolean play_image		(gpointer user_data);
     gboolean play_video		(gpointer user_data);
+    void set_callback(f_play_others prev, f_play_others next, f_get_play_object get_path);
 
 private:
 

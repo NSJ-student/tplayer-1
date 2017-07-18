@@ -7,6 +7,7 @@
 #include <QDirIterator>
 #include <gst/gst.h>
 #include "tplayer.h"
+#include "playlist.h"
 
 namespace Ui {
 class MainWindow;
@@ -32,9 +33,18 @@ private slots:
 
     void on_pbOpen_clicked();
 
+    void on_MainWindow_iconSizeChanged(const QSize &iconSize);
+
+    void on_pbList_clicked();
+
+    void on_MainWindow_destroyed();
+
 private:
     TPlayer * player;
+    PlayList * plist;
     Ui::MainWindow *ui;
+
+    void moveEvent(QMoveEvent *event);
 };
 
 #endif // MAINWINDOW_H
